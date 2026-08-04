@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "NomicFoundation.hardhat-solidity",
+    "JuanBlanco.solidity",
+    "GitHub.copilot"
+  ]
+}

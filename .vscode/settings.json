@@ -1,0 +1,22 @@
+{
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "always"
+  },
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+  "editor.rulers": [
+    100
+  ],
+
+  "solidity.packageDefaultDependenciesDirectory": "lib",
+  "solidity.packageDefaultDependenciesContractsDirectory": "src",
+  "solidity.compileUsingRemoteVersion": "v0.8.30",
+
+"wake.compiler.solc.remappings": [
+  "@openzeppelin/=lib/openzeppelin-contracts/contracts/",
+  "@openzeppelin-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/",
+  "solady/=lib/solady/src/",
+  "prb-math/=lib/prb-math/src/"
+]
+}
