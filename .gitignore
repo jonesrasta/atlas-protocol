@@ -1,0 +1,13 @@
+node_modules
+dist
+coverage
+.env
+.env.*
+.cache
+.turbo
+out
+broadcast
+artifacts
+cache
+lib
+target
