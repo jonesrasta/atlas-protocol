@@ -10,10 +10,7 @@ library Math {
         return a > b ? a : b;
     }
 
-    function percentage(
-        uint256 amount,
-        uint256 basisPoints
-    ) internal pure returns (uint256) {
+    function percentage(uint256 amount, uint256 basisPoints) internal pure returns (uint256) {
         return (amount * basisPoints) / 10_000;
     }
 }

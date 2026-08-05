@@ -2,7 +2,6 @@
 pragma solidity ^0.8.30;
 
 library CommonErrors {
-
     error ZeroAddress();
 
     error InvalidAmount();
@@ -12,5 +11,4 @@ library CommonErrors {
     error InvalidState();
 
     error DeadlineExpired();
-
 }

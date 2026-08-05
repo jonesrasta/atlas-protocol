@@ -5,9 +5,7 @@ import {AtlasTokenBaseTest} from "./AtlasTokenBase.t.sol";
 
 contract AtlasTokenPermitTest is AtlasTokenBaseTest {
     bytes32 internal constant PERMIT_TYPEHASH =
-        keccak256(
-            "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
-        );
+        keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
 
     //BASIC TESTS
 
@@ -58,11 +56,7 @@ contract AtlasTokenPermitTest is AtlasTokenBaseTest {
 
         uint256 deadline = block.timestamp - 1;
 
-        (uint8 v, bytes32 r, bytes32 s) = _signPermit(
-            value,
-            deadline,
-            userPrivateKey
-        );
+        (uint8 v, bytes32 r, bytes32 s) = _signPermit(value, deadline, userPrivateKey);
 
         vm.expectRevert();
 
@@ -74,11 +68,7 @@ contract AtlasTokenPermitTest is AtlasTokenBaseTest {
 
         uint256 deadline = block.timestamp + 1 days;
 
-        (uint8 v, bytes32 r, bytes32 s) = _signPermit(
-            value,
-            deadline,
-            attackerPrivateKey
-        );
+        (uint8 v, bytes32 r, bytes32 s) = _signPermit(value, deadline, attackerPrivateKey);
 
         vm.expectRevert();
 
@@ -90,11 +80,7 @@ contract AtlasTokenPermitTest is AtlasTokenBaseTest {
 
         uint256 deadline = block.timestamp + 1 days;
 
-        (uint8 v, bytes32 r, bytes32 s) = _signPermit(
-            value,
-            deadline,
-            userPrivateKey
-        );
+        (uint8 v, bytes32 r, bytes32 s) = _signPermit(value, deadline, userPrivateKey);
 
         // Primeira execução
 
@@ -112,49 +98,28 @@ contract AtlasTokenPermitTest is AtlasTokenBaseTest {
     //HELPERS
 
     function _executePermit(uint256 value, uint256 deadline) internal {
-        (uint8 v, bytes32 r, bytes32 s) = _signPermit(
-            value,
-            deadline,
-            userPrivateKey
-        );
+        (uint8 v, bytes32 r, bytes32 s) = _signPermit(value, deadline, userPrivateKey);
 
         atlasToken.permit(user, spender, value, deadline, v, r, s);
     }
 
-    function _signPermit(
-        uint256 value,
-        uint256 deadline,
-        uint256 privateKey
-    ) internal view returns (uint8 v, bytes32 r, bytes32 s) {
-        bytes32 digest = _getPermitDigest(
-            user,
-            spender,
-            value,
-            atlasToken.nonces(user),
-            deadline
-        );
+    function _signPermit(uint256 value, uint256 deadline, uint256 privateKey)
+        internal
+        view
+        returns (uint8 v, bytes32 r, bytes32 s)
+    {
+        bytes32 digest = _getPermitDigest(user, spender, value, atlasToken.nonces(user), deadline);
 
         (v, r, s) = vm.sign(privateKey, digest);
     }
 
-    function _getPermitDigest(
-        address owner,
-        address spender_,
-        uint256 value,
-        uint256 nonce,
-        uint256 deadline
-    ) internal view returns (bytes32) {
-        bytes32 structHash = keccak256(
-            abi.encode(PERMIT_TYPEHASH, owner, spender_, value, nonce, deadline)
-        );
+    function _getPermitDigest(address owner, address spender_, uint256 value, uint256 nonce, uint256 deadline)
+        internal
+        view
+        returns (bytes32)
+    {
+        bytes32 structHash = keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender_, value, nonce, deadline));
 
-        return
-            keccak256(
-                abi.encodePacked(
-                    "\x19\x01",
-                    atlasToken.DOMAIN_SEPARATOR(),
-                    structHash
-                )
-            );
+        return keccak256(abi.encodePacked("\x19\x01", atlasToken.DOMAIN_SEPARATOR(), structHash));
     }
 }

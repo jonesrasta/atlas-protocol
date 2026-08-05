@@ -7,15 +7,14 @@
       "^0.8.30"
     ],
 
-    "func-visibility": "warn",
+    "func-visibility": "off",
+    "import-path-check": "off",
+    "no-global-import": "off",
 
+    "gas-indexed-events": "warn",
     "ordering": "warn",
-
-    "reason-string": "off",
-
-    "max-line-length": [
-      "warn",
-      120
-    ]
+    "use-natspec": "warn",
+    "immutable-vars-naming": "warn",
+    "no-empty-blocks": "warn"
   }
 }

@@ -26,10 +26,7 @@ contract AccessManager is AccessControl, IAccessManager {
         _;
     }
 
-    function grantRole(
-        bytes32 role,
-        address account
-    ) public override(AccessControl, IAccessManager) onlyAdmin {
+    function grantRole(bytes32 role, address account) public override(AccessControl, IAccessManager) onlyAdmin {
         if (account == address(0)) {
             revert CommonErrors.ZeroAddress();
         }
@@ -37,10 +34,7 @@ contract AccessManager is AccessControl, IAccessManager {
         _grantRole(role, account);
     }
 
-    function revokeRole(
-        bytes32 role,
-        address account
-    ) public override(AccessControl, IAccessManager) onlyAdmin {
+    function revokeRole(bytes32 role, address account) public override(AccessControl, IAccessManager) onlyAdmin {
         if (account == address(0)) {
             revert CommonErrors.ZeroAddress();
         }
@@ -48,10 +42,7 @@ contract AccessManager is AccessControl, IAccessManager {
         _revokeRole(role, account);
     }
 
-    function hasRole(
-        bytes32 role,
-        address account
-    ) public view override(AccessControl, IAccessManager) returns (bool) {
+    function hasRole(bytes32 role, address account) public view override(AccessControl, IAccessManager) returns (bool) {
         return super.hasRole(role, account);
     }
 }

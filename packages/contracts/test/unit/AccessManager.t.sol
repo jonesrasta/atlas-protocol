@@ -21,9 +21,7 @@ contract AccessManagerTest is Test {
     }
 
     function testDeployWithAdmin() public view {
-        assertTrue(
-            accessManager.hasRole(accessManager.DEFAULT_ADMIN_ROLE(), admin)
-        );
+        assertTrue(accessManager.hasRole(accessManager.DEFAULT_ADMIN_ROLE(), admin));
     }
 
     function testAdminReceivesProtocolRole() public view {

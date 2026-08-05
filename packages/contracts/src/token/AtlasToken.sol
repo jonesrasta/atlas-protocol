@@ -12,29 +12,14 @@ import {Validation} from "../common/Validation.sol";
 
 import "./TokenEvents.sol";
 
-contract AtlasToken is
-    AtlasTokenBase,
-    AtlasTokenStorage,
-    AccessControlled,
-    IAtlasToken
-{
-    constructor(
-        address accessManager_
-    ) AtlasTokenBase("Atlas Token", "ATLAS") AccessControlled(accessManager_) {}
+contract AtlasToken is AtlasTokenBase, AtlasTokenStorage, AccessControlled, IAtlasToken {
+    constructor(address accessManager_) AtlasTokenBase("Atlas Token", "ATLAS") AccessControlled(accessManager_) {}
 
-    function accessManager()
-        external
-        view
-        override(IAtlasToken)
-        returns (address)
-    {
+    function accessManager() external view override(IAtlasToken) returns (address) {
         return address(_accessManager);
     }
 
-    function mint(
-        address to,
-        uint256 amount
-    ) external override onlyRole(Roles.MINTER_ROLE) {
+    function mint(address to, uint256 amount) external override onlyRole(Roles.MINTER_ROLE) {
         Validation.validateAddress(to);
 
         Validation.validateAmount(amount);
@@ -44,10 +29,7 @@ contract AtlasToken is
         emit Mint(to, amount);
     }
 
-    function burn(
-        address from,
-        uint256 amount
-    ) external override onlyRole(Roles.BURNER_ROLE) {
+    function burn(address from, uint256 amount) external override onlyRole(Roles.BURNER_ROLE) {
         Validation.validateAddress(from);
 
         Validation.validateAmount(amount);
