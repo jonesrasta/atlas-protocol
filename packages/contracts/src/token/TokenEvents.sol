@@ -10,8 +10,3 @@ event Burn(
     address indexed from,
     uint256 amount
 );
-
-event AccessManagerUpdated(
-    address indexed previousManager,
-    address indexed newManager
-);

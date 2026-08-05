@@ -6,37 +6,18 @@ import {AccessControl} from "@openzeppelin/access/AccessControl.sol";
 import {IAccessManager} from "./IAccessManager.sol";
 import {Roles} from "./Roles.sol";
 
-import {
-    Unauthorized,
-    ZeroAddress
-} from "./AccessErrors.sol";
-
+import {Unauthorized, ZeroAddress} from "./AccessErrors.sol";
 
 contract AccessManager is AccessControl, IAccessManager {
-
-
-    constructor(
-        address admin
-    ) {
-
-        if(admin == address(0)) {
+    constructor(address admin) {
+        if (admin == address(0)) {
             revert ZeroAddress();
         }
 
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
 
-        _grantRole(
-            DEFAULT_ADMIN_ROLE,
-            admin
-        );
-
-
-        _grantRole(
-            Roles.PROTOCOL_ADMIN_ROLE,
-            admin
-        );
+        _grantRole(Roles.PROTOCOL_ADMIN_ROLE, admin);
     }
-
-
 
     function grantRole(
         bytes32 role,
@@ -46,19 +27,12 @@ contract AccessManager is AccessControl, IAccessManager {
         override(AccessControl, IAccessManager)
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
-
-        if(account == address(0)) {
+        if (account == address(0)) {
             revert ZeroAddress();
         }
 
-
-        _grantRole(
-            role,
-            account
-        );
+        _grantRole(role, account);
     }
-
-
 
     function revokeRole(
         bytes32 role,
@@ -68,30 +42,13 @@ contract AccessManager is AccessControl, IAccessManager {
         override(AccessControl, IAccessManager)
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
-
-        _revokeRole(
-            role,
-            account
-        );
+        _revokeRole(role, account);
     }
-
-
 
     function hasRole(
         bytes32 role,
         address account
-    )
-        public
-        view
-        override(AccessControl, IAccessManager)
-        returns(bool)
-    {
-
-        return super.hasRole(
-            role,
-            account
-        );
-
+    ) public view override(AccessControl, IAccessManager) returns (bool) {
+        return super.hasRole(role, account);
     }
-
 }

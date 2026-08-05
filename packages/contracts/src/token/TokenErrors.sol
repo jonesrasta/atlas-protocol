@@ -6,5 +6,3 @@ error Unauthorized();
 error ZeroAddress();
 
 error InvalidAmount();
-
-error MaxSupplyExceeded();

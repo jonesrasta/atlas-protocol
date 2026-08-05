@@ -5,148 +5,62 @@ import {Test} from "forge-std/Test.sol";
 
 import {AccessManager} from "../../src/access/AccessManager.sol";
 import {Roles} from "../../src/access/Roles.sol";
-
+import {ZeroAddress, Unauthorized} from "../../src/access/AccessErrors.sol";
 
 contract AccessManagerTest is Test {
+    AccessManager internal accessManager;
 
-
-    AccessManager accessManager;
-
-
-    address admin = address(1);
-
-    address user = address(2);
-
-    address minter = address(3);
-
-
+    address internal admin;
+    address internal user;
 
     function setUp() public {
+        admin = makeAddr("admin");
+        user = makeAddr("user");
 
-        accessManager = new AccessManager(
-            admin
-        );
-
+        accessManager = new AccessManager(admin);
     }
 
-
-
-    function testDeployWithAdmin() public {
-
+    function testDeployWithAdmin() public view {
         assertTrue(
-            accessManager.hasRole(
-                accessManager.DEFAULT_ADMIN_ROLE(),
-                admin
-            )
+            accessManager.hasRole(accessManager.DEFAULT_ADMIN_ROLE(), admin)
         );
-
     }
 
-
+    function testAdminReceivesProtocolRole() public view {
+        assertTrue(accessManager.hasRole(Roles.PROTOCOL_ADMIN_ROLE, admin));
+    }
 
     function testRejectZeroAddress() public {
+        vm.expectRevert(ZeroAddress.selector);
 
-        vm.expectRevert();
-
-        new AccessManager(
-            address(0)
-        );
-
+        new AccessManager(address(0));
     }
-
-
-
-    function testAdminReceivesProtocolRole() public {
-
-        assertTrue(
-
-            accessManager.hasRole(
-                Roles.PROTOCOL_ADMIN_ROLE,
-                admin
-            )
-
-        );
-
-    }
-
-
 
     function testAdminCanGrantMinterRole() public {
-
-
         vm.prank(admin);
 
+        accessManager.grantRole(Roles.MINTER_ROLE, user);
 
-        accessManager.grantRole(
-            Roles.MINTER_ROLE,
-            minter
-        );
-
-
-        assertTrue(
-
-            accessManager.hasRole(
-                Roles.MINTER_ROLE,
-                minter
-            )
-
-        );
-
+        assertTrue(accessManager.hasRole(Roles.MINTER_ROLE, user));
     }
 
-
-
-
     function testAdminCanRevokeRole() public {
-
-
         vm.startPrank(admin);
 
+        accessManager.grantRole(Roles.MINTER_ROLE, user);
 
-        accessManager.grantRole(
-            Roles.MINTER_ROLE,
-            minter
-        );
-
-
-        accessManager.revokeRole(
-            Roles.MINTER_ROLE,
-            minter
-        );
-
+        accessManager.revokeRole(Roles.MINTER_ROLE, user);
 
         vm.stopPrank();
 
-
-
-        assertFalse(
-
-            accessManager.hasRole(
-                Roles.MINTER_ROLE,
-                minter
-            )
-
-        );
-
+        assertFalse(accessManager.hasRole(Roles.MINTER_ROLE, user));
     }
 
-
-
-
     function testUserCannotGrantRole() public {
-
+        vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
 
         vm.prank(user);
 
-
-        vm.expectRevert();
-
-
-        accessManager.grantRole(
-            Roles.MINTER_ROLE,
-            user
-        );
-
+        accessManager.grantRole(Roles.MINTER_ROLE, user);
     }
-
 }

@@ -2,7 +2,6 @@
 pragma solidity ^0.8.30;
 
 library AccessEvents {
-
     event RoleGranted(
         bytes32 indexed role,
         address indexed account,
@@ -14,5 +13,4 @@ library AccessEvents {
         address indexed account,
         address indexed sender
     );
-
 }
