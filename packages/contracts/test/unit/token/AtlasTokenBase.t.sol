@@ -16,6 +16,10 @@ abstract contract AtlasTokenBaseTest is Test {
     address internal burner;
     address internal user;
     address internal spender;
+    address internal attacker;
+
+    uint256 internal userPrivateKey;
+    uint256 internal attackerPrivateKey;
 
     uint256 internal constant INITIAL_MINT = 1_000 ether;
 
@@ -23,8 +27,15 @@ abstract contract AtlasTokenBaseTest is Test {
         admin = makeAddr("admin");
         minter = makeAddr("minter");
         burner = makeAddr("burner");
-        user = makeAddr("user");
         spender = makeAddr("spender");
+
+        // Usuário real com chave conhecida para assinatura EIP712
+        userPrivateKey = 0xA11CE;
+        user = vm.addr(userPrivateKey);
+
+        // Atacante com outra chave
+        attackerPrivateKey = 0xB0B;
+        attacker = vm.addr(attackerPrivateKey);
 
         accessManager = new AccessManager(admin);
 

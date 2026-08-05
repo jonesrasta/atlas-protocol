@@ -1,0 +1,45 @@
+name: Smart Contracts CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+  pull_request:
+
+jobs:
+  contracts:
+
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: packages/contracts
+
+    steps:
+
+      - uses: actions/checkout@v4
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Format
+        run: forge fmt --check
+
+      - name: Build
+        run: forge build
+
+      - name: Test
+        run: forge test -vv
+
+      - name: Coverage
+        run: forge coverage

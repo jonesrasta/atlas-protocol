@@ -6,6 +6,9 @@ out/
 .logs/
 .ignore/
 
+# Security reports
+report.md
+
 # Ignores development broadcast logs
 !/broadcast
 /broadcast/*/31337/

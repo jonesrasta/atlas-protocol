@@ -5,7 +5,7 @@ import {Test} from "forge-std/Test.sol";
 
 import {AccessManager} from "../../src/access/AccessManager.sol";
 import {Roles} from "../../src/access/Roles.sol";
-import {ZeroAddress, Unauthorized} from "../../src/access/AccessErrors.sol";
+import {CommonErrors} from "../../src/common/CommonErrors.sol";
 
 contract AccessManagerTest is Test {
     AccessManager internal accessManager;
@@ -31,7 +31,7 @@ contract AccessManagerTest is Test {
     }
 
     function testRejectZeroAddress() public {
-        vm.expectRevert(ZeroAddress.selector);
+        vm.expectRevert(CommonErrors.ZeroAddress.selector);
 
         new AccessManager(address(0));
     }
@@ -57,7 +57,7 @@ contract AccessManagerTest is Test {
     }
 
     function testUserCannotGrantRole() public {
-        vm.expectRevert(abi.encodeWithSelector(Unauthorized.selector));
+        vm.expectRevert(abi.encodeWithSelector(CommonErrors.Unauthorized.selector));
 
         vm.prank(user);
 

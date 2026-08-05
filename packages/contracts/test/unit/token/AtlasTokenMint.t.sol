@@ -4,7 +4,7 @@ pragma solidity ^0.8.30;
 import {AtlasTokenBaseTest} from "./AtlasTokenBase.t.sol";
 import "../../../src/token/TokenEvents.sol";
 
-import {Unauthorized, ZeroAddress, InvalidAmount} from "../../../src/token/TokenErrors.sol";
+import {CommonErrors} from "../../../src/common/CommonErrors.sol";
 
 contract AtlasTokenMintTest is AtlasTokenBaseTest {
     function testMintSuccess() public {
@@ -36,7 +36,7 @@ contract AtlasTokenMintTest is AtlasTokenBaseTest {
     }
 
     function testMintZeroAddress() public {
-        vm.expectRevert(ZeroAddress.selector);
+        vm.expectRevert(CommonErrors.ZeroAddress.selector);
 
         vm.prank(minter);
 
@@ -44,7 +44,7 @@ contract AtlasTokenMintTest is AtlasTokenBaseTest {
     }
 
     function testMintZeroAmount() public {
-        vm.expectRevert(InvalidAmount.selector);
+        vm.expectRevert(CommonErrors.InvalidAmount.selector);
 
         vm.prank(minter);
 
@@ -52,7 +52,7 @@ contract AtlasTokenMintTest is AtlasTokenBaseTest {
     }
 
     function testUserCannotMint() public {
-        vm.expectRevert(Unauthorized.selector);
+        vm.expectRevert(CommonErrors.Unauthorized.selector);
 
         vm.prank(user);
 

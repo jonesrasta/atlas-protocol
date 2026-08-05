@@ -6,29 +6,32 @@ import {AccessControl} from "@openzeppelin/access/AccessControl.sol";
 import {IAccessManager} from "./IAccessManager.sol";
 import {Roles} from "./Roles.sol";
 
-import {Unauthorized, ZeroAddress} from "./AccessErrors.sol";
+import {CommonErrors} from "../common/CommonErrors.sol";
 
 contract AccessManager is AccessControl, IAccessManager {
     constructor(address admin) {
         if (admin == address(0)) {
-            revert ZeroAddress();
+            revert CommonErrors.ZeroAddress();
         }
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
-
         _grantRole(Roles.PROTOCOL_ADMIN_ROLE, admin);
+    }
+
+    modifier onlyAdmin() {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
+            revert CommonErrors.Unauthorized();
+        }
+
+        _;
     }
 
     function grantRole(
         bytes32 role,
         address account
-    )
-        public
-        override(AccessControl, IAccessManager)
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
+    ) public override(AccessControl, IAccessManager) onlyAdmin {
         if (account == address(0)) {
-            revert ZeroAddress();
+            revert CommonErrors.ZeroAddress();
         }
 
         _grantRole(role, account);
@@ -37,11 +40,11 @@ contract AccessManager is AccessControl, IAccessManager {
     function revokeRole(
         bytes32 role,
         address account
-    )
-        public
-        override(AccessControl, IAccessManager)
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
+    ) public override(AccessControl, IAccessManager) onlyAdmin {
+        if (account == address(0)) {
+            revert CommonErrors.ZeroAddress();
+        }
+
         _revokeRole(role, account);
     }
 

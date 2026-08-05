@@ -3,7 +3,7 @@ pragma solidity ^0.8.30;
 
 import {AtlasTokenBaseTest} from "./AtlasTokenBase.t.sol";
 
-import {Unauthorized} from "../../../src/token/TokenErrors.sol";
+import {CommonErrors} from "../../../src/common/CommonErrors.sol";
 
 contract AtlasTokenAccessTest is AtlasTokenBaseTest {
     function testMinterRoleCanMint() public {
@@ -27,7 +27,7 @@ contract AtlasTokenAccessTest is AtlasTokenBaseTest {
     }
 
     function testUserCannotMint() public {
-        vm.expectRevert(Unauthorized.selector);
+        vm.expectRevert(CommonErrors.Unauthorized.selector);
 
         vm.prank(user);
 
@@ -39,7 +39,7 @@ contract AtlasTokenAccessTest is AtlasTokenBaseTest {
 
         atlasToken.mint(user, INITIAL_MINT);
 
-        vm.expectRevert(Unauthorized.selector);
+        vm.expectRevert(CommonErrors.Unauthorized.selector);
 
         vm.prank(user);
 
@@ -47,7 +47,7 @@ contract AtlasTokenAccessTest is AtlasTokenBaseTest {
     }
 
     function testAdminCannotMintWithoutRole() public {
-        vm.expectRevert(Unauthorized.selector);
+        vm.expectRevert(CommonErrors.Unauthorized.selector);
 
         vm.prank(admin);
 
@@ -59,7 +59,7 @@ contract AtlasTokenAccessTest is AtlasTokenBaseTest {
 
         atlasToken.mint(user, INITIAL_MINT);
 
-        vm.expectRevert(Unauthorized.selector);
+        vm.expectRevert(CommonErrors.Unauthorized.selector);
 
         vm.prank(admin);
 

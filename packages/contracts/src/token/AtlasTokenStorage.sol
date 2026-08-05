@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
+/// @title AtlasTokenStorage
+/// @notice Storage específico do AtlasToken.
 abstract contract AtlasTokenStorage {
-    address internal _accessManager;
 
-    // uint256 internal _initialSupply;
-
-    // uint256 internal _tokenSupplyCap;
 }

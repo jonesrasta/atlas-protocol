@@ -5,7 +5,7 @@ import {Test} from "forge-std/Test.sol";
 
 import {AccessManager} from "../../../src/access/AccessManager.sol";
 import {AtlasToken} from "../../../src/token/AtlasToken.sol";
-import {ZeroAddress} from "../../../src/token/TokenErrors.sol";
+import {CommonErrors} from "../../../src/common/CommonErrors.sol";
 
 contract AtlasTokenConstructorTest is Test {
     AccessManager internal accessManager;
@@ -38,7 +38,7 @@ contract AtlasTokenConstructorTest is Test {
     }
 
     function testRejectZeroAccessManager() public {
-        vm.expectRevert(ZeroAddress.selector);
+        vm.expectRevert(CommonErrors.ZeroAddress.selector);
 
         new AtlasToken(address(0));
     }
