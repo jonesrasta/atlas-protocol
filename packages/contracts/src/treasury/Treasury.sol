@@ -19,9 +19,7 @@ import "./TreasuryStorage.sol";
 contract Treasury is AccessControlled, TreasuryStorage, ITreasury {
     using SafeERC20 for IERC20;
 
-    constructor(address accessManager_)
-        AccessControlled(accessManager_)
-    {}
+    constructor(address accessManager_) AccessControlled(accessManager_) {}
 
     /// @inheritdoc ITreasury
     function accessManager() external view override returns (address) {
@@ -36,10 +34,11 @@ contract Treasury is AccessControlled, TreasuryStorage, ITreasury {
     }
 
     /// @inheritdoc ITreasury
-    function withdrawETH(
-        address payable receiver,
-        uint256 amount
-    ) external override onlyRole(Roles.TREASURY_MANAGER_ROLE) {
+    function withdrawETH(address payable receiver, uint256 amount)
+        external
+        override
+        onlyRole(Roles.TREASURY_MANAGER_ROLE)
+    {
         Validation.validateAddress(receiver);
         Validation.validateAmount(amount);
 
@@ -57,18 +56,11 @@ contract Treasury is AccessControlled, TreasuryStorage, ITreasury {
     }
 
     /// @inheritdoc ITreasury
-    function depositToken(
-        address token,
-        uint256 amount
-    ) external override {
+    function depositToken(address token, uint256 amount) external override {
         Validation.validateAddress(token);
         Validation.validateAmount(amount);
 
-        IERC20(token).safeTransferFrom(
-            msg.sender,
-            address(this),
-            amount
-        );
+        IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
         _tokenBalances[token] += amount;
 
@@ -76,11 +68,11 @@ contract Treasury is AccessControlled, TreasuryStorage, ITreasury {
     }
 
     /// @inheritdoc ITreasury
-    function withdrawToken(
-        address token,
-        address receiver,
-        uint256 amount
-    ) external override onlyRole(Roles.TREASURY_MANAGER_ROLE) {
+    function withdrawToken(address token, address receiver, uint256 amount)
+        external
+        override
+        onlyRole(Roles.TREASURY_MANAGER_ROLE)
+    {
         Validation.validateAddress(token);
         Validation.validateAddress(receiver);
         Validation.validateAmount(amount);
@@ -102,9 +94,7 @@ contract Treasury is AccessControlled, TreasuryStorage, ITreasury {
     }
 
     /// @inheritdoc ITreasury
-    function tokenBalance(
-        address token
-    ) external view override returns (uint256) {
+    function tokenBalance(address token) external view override returns (uint256) {
         return _tokenBalances[token];
     }
 

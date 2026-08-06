@@ -51,7 +51,6 @@ abstract contract TreasuryBaseTest is Test {
         mockToken.mint(attacker, INITIAL_TOKEN);
     }
 
-
     //Helpers
     function _depositETH(address depositor, uint256 amount) internal {
         vm.prank(depositor);

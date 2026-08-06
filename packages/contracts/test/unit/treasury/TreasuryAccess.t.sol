@@ -88,9 +88,7 @@ contract TreasuryAccessTest is Test {
 
         accessManager.grantRole(Roles.TREASURY_MANAGER_ROLE, newManager);
 
-        assertTrue(
-            accessManager.hasRole(Roles.TREASURY_MANAGER_ROLE, newManager)
-        );
+        assertTrue(accessManager.hasRole(Roles.TREASURY_MANAGER_ROLE, newManager));
     }
 
     function test_AdminCanRevokeTreasuryRole() public {
@@ -98,9 +96,7 @@ contract TreasuryAccessTest is Test {
 
         accessManager.revokeRole(Roles.TREASURY_MANAGER_ROLE, manager);
 
-        assertFalse(
-            accessManager.hasRole(Roles.TREASURY_MANAGER_ROLE, manager)
-        );
+        assertFalse(accessManager.hasRole(Roles.TREASURY_MANAGER_ROLE, manager));
     }
 
     function test_RevertWhen_UserGrantsRole() public {

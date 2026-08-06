@@ -53,10 +53,7 @@ contract TreasuryWithdrawTokenTest is Test {
 
         assertEq(token.balanceOf(receiver), receiverBefore + WITHDRAW_AMOUNT);
 
-        assertEq(
-            treasury.tokenBalance(address(token)),
-            INITIAL_DEPOSIT - WITHDRAW_AMOUNT
-        );
+        assertEq(treasury.tokenBalance(address(token)), INITIAL_DEPOSIT - WITHDRAW_AMOUNT);
     }
 
     function test_EmitTokenWithdrawnEvent() public {
@@ -82,11 +79,7 @@ contract TreasuryWithdrawTokenTest is Test {
 
         vm.prank(manager);
 
-        treasury.withdrawToken(
-            address(token),
-            receiver,
-            INITIAL_DEPOSIT + 1 ether
-        );
+        treasury.withdrawToken(address(token), receiver, INITIAL_DEPOSIT + 1 ether);
     }
 
     function test_RevertWhen_TokenAddressIsZero() public {
@@ -155,9 +148,5 @@ contract TreasuryWithdrawTokenTest is Test {
         assertEq(treasury.tokenBalance(address(secondToken)), 400 ether);
     }
 
-    event TokenWithdrawn(
-        address indexed token,
-        address indexed receiver,
-        uint256 amount
-    );
+    event TokenWithdrawn(address indexed token, address indexed receiver, uint256 amount);
 }

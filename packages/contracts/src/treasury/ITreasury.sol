@@ -11,11 +11,7 @@ interface ITreasury {
 
     function depositToken(address token, uint256 amount) external;
 
-    function withdrawToken(
-        address token,
-        address receiver,
-        uint256 amount
-    ) external;
+    function withdrawToken(address token, address receiver, uint256 amount) external;
 
     function balanceETH() external view returns (uint256);
 

@@ -48,9 +48,7 @@ contract TreasuryDepositETHTest is TreasuryBaseTest {
 
         vm.prank(user);
 
-        (bool success, ) = payable(address(treasury)).call{
-            value: DEPOSIT_AMOUNT
-        }("");
+        (bool success,) = payable(address(treasury)).call{value: DEPOSIT_AMOUNT}("");
 
         assertTrue(success);
 
@@ -60,9 +58,7 @@ contract TreasuryDepositETHTest is TreasuryBaseTest {
     function testReceiveFunctionUpdatesBalance() public {
         vm.prank(user);
 
-        (bool success, ) = payable(address(treasury)).call{
-            value: DEPOSIT_AMOUNT
-        }("");
+        (bool success,) = payable(address(treasury)).call{value: DEPOSIT_AMOUNT}("");
 
         assertTrue(success);
 

@@ -102,9 +102,5 @@ contract TreasuryDepositTokenTest is Test {
         assertEq(treasury.tokenBalance(address(secondToken)), 200 ether);
     }
 
-    event TokenDeposited(
-        address indexed token,
-        address indexed sender,
-        uint256 amount
-    );
+    event TokenDeposited(address indexed token, address indexed sender, uint256 amount);
 }
