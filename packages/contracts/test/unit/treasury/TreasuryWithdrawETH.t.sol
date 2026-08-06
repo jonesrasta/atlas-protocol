@@ -11,16 +11,22 @@ import {TreasuryErrors} from "../../../src/treasury/TreasuryErrors.sol";
 import {CommonErrors} from "../../../src/common/CommonErrors.sol";
 
 contract TreasuryWithdrawETHTest is Test {
-    Treasury treasury;
-    AccessManager accessManager;
+    Treasury internal treasury;
+    AccessManager internal accessManager;
 
-    address admin = address(1);
-    address manager = address(2);
-    address receiver = address(3);
-    address user = address(4);
+    address internal admin = makeAddr("admin");
 
-    uint256 constant INITIAL_BALANCE = 100 ether;
-    uint256 constant WITHDRAW_AMOUNT = 25 ether;
+    address internal manager = makeAddr("manager");
+
+    address payable internal receiver = payable(makeAddr("receiver"));
+
+    address internal user = makeAddr("user");
+
+    uint256 internal constant INITIAL_BALANCE = 100 ether;
+
+    uint256 internal constant WITHDRAW_AMOUNT = 25 ether;
+
+    event ETHWithdrawn(address indexed receiver, uint256 amount);
 
     function setUp() public {
         vm.startPrank(admin);
@@ -37,13 +43,13 @@ contract TreasuryWithdrawETHTest is Test {
     }
 
     function test_WithdrawETH() public {
-        uint256 receiverBefore = receiver.balance;
+        uint256 balanceBefore = receiver.balance;
 
         vm.prank(manager);
 
-        treasury.withdrawETH(payable(receiver), WITHDRAW_AMOUNT);
+        treasury.withdrawETH(receiver, WITHDRAW_AMOUNT);
 
-        assertEq(receiver.balance, receiverBefore + WITHDRAW_AMOUNT);
+        assertEq(receiver.balance, balanceBefore + WITHDRAW_AMOUNT);
 
         assertEq(treasury.balanceETH(), INITIAL_BALANCE - WITHDRAW_AMOUNT);
     }
@@ -55,7 +61,7 @@ contract TreasuryWithdrawETHTest is Test {
 
         vm.prank(manager);
 
-        treasury.withdrawETH(payable(receiver), WITHDRAW_AMOUNT);
+        treasury.withdrawETH(receiver, WITHDRAW_AMOUNT);
     }
 
     function test_RevertWhen_UserWithoutRoleWithdrawsETH() public {
@@ -63,7 +69,7 @@ contract TreasuryWithdrawETHTest is Test {
 
         vm.prank(user);
 
-        treasury.withdrawETH(payable(receiver), WITHDRAW_AMOUNT);
+        treasury.withdrawETH(receiver, WITHDRAW_AMOUNT);
     }
 
     function test_RevertWhen_WithdrawAmountExceedsBalance() public {
@@ -71,11 +77,11 @@ contract TreasuryWithdrawETHTest is Test {
 
         vm.prank(manager);
 
-        treasury.withdrawETH(payable(receiver), INITIAL_BALANCE + 1 ether);
+        treasury.withdrawETH(receiver, INITIAL_BALANCE + 1 ether);
     }
 
     function test_RevertWhen_ReceiverIsZeroAddress() public {
-        vm.expectRevert();
+        vm.expectRevert(TreasuryErrors.ZeroAddress.selector);
 
         vm.prank(manager);
 
@@ -83,17 +89,17 @@ contract TreasuryWithdrawETHTest is Test {
     }
 
     function test_RevertWhen_AmountIsZero() public {
-        vm.expectRevert();
+        vm.expectRevert(TreasuryErrors.InvalidAmount.selector);
 
         vm.prank(manager);
 
-        treasury.withdrawETH(payable(receiver), 0);
+        treasury.withdrawETH(receiver, 0);
     }
 
     function test_ManagerCanWithdrawEntireTreasuryBalance() public {
         vm.prank(manager);
 
-        treasury.withdrawETH(payable(receiver), INITIAL_BALANCE);
+        treasury.withdrawETH(receiver, INITIAL_BALANCE);
 
         assertEq(treasury.balanceETH(), 0);
 
@@ -103,14 +109,28 @@ contract TreasuryWithdrawETHTest is Test {
     function test_MultipleWithdrawalsReduceBalance() public {
         vm.startPrank(manager);
 
-        treasury.withdrawETH(payable(receiver), 10 ether);
+        treasury.withdrawETH(receiver, 10 ether);
 
-        treasury.withdrawETH(payable(receiver), 20 ether);
+        treasury.withdrawETH(receiver, 20 ether);
 
         vm.stopPrank();
 
         assertEq(treasury.balanceETH(), 70 ether);
     }
 
-    event ETHWithdrawn(address indexed receiver, uint256 amount);
+    function test_RevertWhen_ETHTransferFails() public {
+        RejectETHReceiver rejectReceiver = new RejectETHReceiver();
+
+        vm.expectRevert(TreasuryErrors.TransferFailed.selector);
+
+        vm.prank(manager);
+
+        treasury.withdrawETH(payable(address(rejectReceiver)), 1 ether);
+    }
+}
+
+contract RejectETHReceiver {
+    receive() external payable {
+        revert();
+    }
 }
