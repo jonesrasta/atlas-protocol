@@ -32,8 +32,8 @@ contract Treasury is AccessControlled, TreasuryStorage, ITreasury, ReentrancyGua
     function withdrawETH(address payable receiver, uint256 amount)
         external
         override
-        nonReentrant
         onlyRole(Roles.TREASURY_MANAGER_ROLE)
+        nonReentrant
     {
         Validation.validateAddress(receiver);
 
@@ -50,6 +50,8 @@ contract Treasury is AccessControlled, TreasuryStorage, ITreasury, ReentrancyGua
         emit ETHWithdrawn(receiver, amount);
     }
 
+    /// @notice Sends ETH to an authorized treasury withdrawal receiver.
+    /// @dev Receiver is controlled by TREASURY_MANAGER_ROLE.
     function _sendETH(address payable receiver, uint256 amount) internal {
         (bool success,) = receiver.call{value: amount}("");
 
@@ -60,6 +62,7 @@ contract Treasury is AccessControlled, TreasuryStorage, ITreasury, ReentrancyGua
 
     function depositToken(address token, uint256 amount) external override {
         Validation.validateAddress(token);
+
         Validation.validateAmount(amount);
 
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
@@ -73,9 +76,12 @@ contract Treasury is AccessControlled, TreasuryStorage, ITreasury, ReentrancyGua
         external
         override
         onlyRole(Roles.TREASURY_MANAGER_ROLE)
+        nonReentrant
     {
         Validation.validateAddress(token);
+
         Validation.validateAddress(receiver);
+
         Validation.validateAmount(amount);
 
         if (_tokenBalances[token] < amount) {
@@ -98,6 +104,8 @@ contract Treasury is AccessControlled, TreasuryStorage, ITreasury, ReentrancyGua
     }
 
     receive() external payable {
+        Validation.validateAmount(msg.value);
+
         emit ETHDeposited(msg.sender, msg.value);
     }
 }
