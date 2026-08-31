@@ -17,6 +17,7 @@ abstract contract VaultBase is Test {
     address internal admin = makeAddr("admin");
 
     address internal user = makeAddr("user");
+    address internal user2 = makeAddr("user2");
 
     function setUp() public virtual {
         accessManager = new AccessManager(admin);
@@ -40,3 +41,4 @@ abstract contract VaultBase is Test {
         asset.mint(to, amount);
     }
 }
+

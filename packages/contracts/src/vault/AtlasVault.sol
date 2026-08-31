@@ -51,6 +51,40 @@ contract AtlasVault is ERC4626, AccessControlled, AtlasVaultStorage, IAtlasVault
         emit VaultUnpaused(msg.sender);
     }
 
+    // ERC4626 Limits
+
+    function maxDeposit(address receiver) public view override(ERC4626, IERC4626) returns (uint256) {
+        if (_paused) {
+            return 0;
+        }
+
+        return super.maxDeposit(receiver);
+    }
+
+    function maxMint(address receiver) public view override(ERC4626, IERC4626) returns (uint256) {
+        if (_paused) {
+            return 0;
+        }
+
+        return super.maxMint(receiver);
+    }
+
+    function maxWithdraw(address owner) public view override(ERC4626, IERC4626) returns (uint256) {
+        if (_paused) {
+            return 0;
+        }
+
+        return super.maxWithdraw(owner);
+    }
+
+    function maxRedeem(address owner) public view override(ERC4626, IERC4626) returns (uint256) {
+        if (_paused) {
+            return 0;
+        }
+
+        return super.maxRedeem(owner);
+    }
+
     // ERC4626 Overrides
 
     function deposit(uint256 assets, address receiver) public override(ERC4626, IERC4626) returns (uint256 shares) {
