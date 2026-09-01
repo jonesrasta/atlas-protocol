@@ -2,6 +2,7 @@
 pragma solidity ^0.8.30;
 
 import {VaultBase} from "./VaultBase.t.sol";
+import {AtlasVault} from "../../../src/vault/AtlasVault.sol";
 
 contract VaultAccountingTest is VaultBase {
     uint256 internal constant AMOUNT = 100 ether;
@@ -360,5 +361,222 @@ contract VaultAccountingTest is VaultBase {
         assertEq(assetsReceived, 1);
         assertEq(vault.balanceOf(user), sharesBefore - 1);
         assertEq(asset.balanceOf(user), 1);
+    }
+
+    // =============================================================
+    //                    INFLATION ATTACK
+    // =============================================================
+
+    function test_inflationAttack_firstDepositorDonation() public {
+        // ---------------------------------------------------------
+        // Create a fresh empty vault.
+        //
+        // The main test fixture already contains:
+        // 100 assets / 100 shares.
+        //
+        // An inflation attack must start with an empty vault,
+        // otherwise the attacker is not the first depositor.
+        // ---------------------------------------------------------
+
+        AtlasVault attackVault = new AtlasVault(asset, address(accessManager));
+
+        uint256 attackerInitialDeposit = 1;
+        uint256 donation = 100 ether;
+        uint256 victimDeposit = 100 ether;
+
+        address attacker = makeAddr("attacker");
+        address victim = makeAddr("victim");
+
+        assertEq(attackVault.totalAssets(), 0);
+        assertEq(attackVault.totalSupply(), 0);
+
+        // ---------------------------------------------------------
+        // 1. Attacker makes the first deposit with 1 wei.
+        // ---------------------------------------------------------
+
+        mintAsset(attacker, attackerInitialDeposit);
+
+        vm.startPrank(attacker);
+
+        asset.approve(address(attackVault), attackerInitialDeposit);
+
+        uint256 attackerShares = attackVault.deposit(attackerInitialDeposit, attacker);
+
+        vm.stopPrank();
+
+        assertEq(attackerShares, 1);
+        assertEq(attackVault.balanceOf(attacker), 1);
+
+        // ---------------------------------------------------------
+        // 2. Attacker donates 100 ETH directly to the vault.
+        // ---------------------------------------------------------
+
+        mintAsset(attacker, donation);
+
+        vm.prank(attacker);
+        asset.transfer(address(attackVault), donation);
+
+        assertEq(attackVault.totalAssets(), attackerInitialDeposit + donation);
+
+        // Donation must not mint shares.
+        assertEq(attackVault.totalSupply(), attackerShares);
+        assertEq(attackVault.balanceOf(attacker), attackerShares);
+
+        // ---------------------------------------------------------
+        // 3. Victim deposits 100 ETH after the donation.
+        // ---------------------------------------------------------
+
+        mintAsset(victim, victimDeposit);
+
+        uint256 victimPreviewShares = attackVault.previewDeposit(victimDeposit);
+
+        vm.startPrank(victim);
+
+        asset.approve(address(attackVault), victimDeposit);
+
+        uint256 victimShares = attackVault.deposit(victimDeposit, victim);
+
+        vm.stopPrank();
+
+        assertEq(victimShares, victimPreviewShares);
+
+        assertEq(attackVault.totalAssets(), attackerInitialDeposit + donation + victimDeposit);
+
+        assertEq(attackVault.totalSupply(), attackerShares + victimShares);
+
+        // The donation must reduce the victim's shares.
+        assertGt(victimShares, 0);
+        assertLt(victimShares, victimDeposit);
+
+        // ---------------------------------------------------------
+        // 4. Attacker redeems the original 1 share.
+        // ---------------------------------------------------------
+
+        uint256 attackerCapital = attackerInitialDeposit + donation;
+
+        vm.prank(attacker);
+
+        uint256 attackerRecoveredAssets = attackVault.redeem(attackerShares, attacker, attacker);
+
+        // ---------------------------------------------------------
+        // 5. Economic result.
+        // ---------------------------------------------------------
+
+        // The attacker cannot recover more assets than the capital
+        // committed to the attack.
+        assertLe(attackerRecoveredAssets, attackerCapital);
+
+        // The attacker's final balance must also remain bounded by
+        // the capital committed to the attack.
+        assertLe(asset.balanceOf(attacker), attackerCapital);
+
+        // Attacker no longer owns shares.
+        assertEq(attackVault.balanceOf(attacker), 0);
+
+        // Victim still owns shares.
+        assertEq(attackVault.balanceOf(victim), victimShares);
+        assertGt(victimShares, 0);
+    }
+
+    function test_inflationAttack_economicImpact() public {
+        // ---------------------------------------------------------
+        // Fresh vault: 0 assets / 0 shares.
+        // ---------------------------------------------------------
+
+        AtlasVault attackVault = new AtlasVault(asset, address(accessManager));
+
+        uint256 attackerInitialDeposit = 1;
+        uint256 donation = 10 ether;
+        uint256 victimDeposit = 10 ether;
+
+        address attacker = makeAddr("economicAttacker");
+        address victim = makeAddr("economicVictim");
+
+        // ---------------------------------------------------------
+        // 1. Attacker makes the first deposit with 1 wei.
+        // ---------------------------------------------------------
+
+        mintAsset(attacker, attackerInitialDeposit);
+
+        vm.startPrank(attacker);
+
+        asset.approve(address(attackVault), attackerInitialDeposit);
+
+        uint256 attackerShares = attackVault.deposit(attackerInitialDeposit, attacker);
+
+        vm.stopPrank();
+
+        assertEq(attackerShares, 1);
+
+        // ---------------------------------------------------------
+        // 2. Attacker donates assets directly to the vault.
+        // ---------------------------------------------------------
+
+        mintAsset(attacker, donation);
+
+        vm.prank(attacker);
+        asset.transfer(address(attackVault), donation);
+
+        // ---------------------------------------------------------
+        // 3. Victim deposits after the donation.
+        // ---------------------------------------------------------
+
+        mintAsset(victim, victimDeposit);
+
+        uint256 victimShares = attackVault.previewDeposit(victimDeposit);
+
+        vm.startPrank(victim);
+
+        asset.approve(address(attackVault), victimDeposit);
+        attackVault.deposit(victimDeposit, victim);
+
+        vm.stopPrank();
+
+        // The victim must receive shares.
+        assertGt(victimShares, 0);
+
+        // But the donation must significantly reduce the
+        // amount of shares received relative to a 1:1 vault.
+        assertLt(victimShares, victimDeposit);
+
+        // ---------------------------------------------------------
+        // 4. Calculate the attacker's economic position.
+        // ---------------------------------------------------------
+
+        uint256 attackerCapital = attackerInitialDeposit + donation;
+
+        vm.prank(attacker);
+
+        uint256 attackerRecoveredAssets = attackVault.redeem(attackerShares, attacker, attacker);
+
+        // Net profit/loss.
+        int256 attackerProfit = int256(attackerRecoveredAssets) - int256(attackerCapital);
+
+        // ---------------------------------------------------------
+        // 5. Calculate the victim's effective value.
+        // ---------------------------------------------------------
+
+        uint256 victimEffectiveValue = attackVault.convertToAssets(victimShares);
+
+        // ---------------------------------------------------------
+        // 6. Economic assertions.
+        // ---------------------------------------------------------
+
+        // The attacker cannot extract more than the capital
+        // committed to the attack.
+        assertLe(attackerRecoveredAssets, attackerCapital);
+
+        // Therefore the attack cannot produce a positive
+        // risk-free profit in this controlled scenario.
+        assertLe(attackerProfit, 0);
+
+        // The victim's shares must retain positive value.
+        assertGt(victimEffectiveValue, 0);
+
+        // The attacker no longer owns shares.
+        assertEq(attackVault.balanceOf(attacker), 0);
+
+        // The victim still owns the shares received from the deposit.
+        assertEq(attackVault.balanceOf(victim), victimShares);
     }
 }
