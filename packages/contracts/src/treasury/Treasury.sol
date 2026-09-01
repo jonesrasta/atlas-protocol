@@ -19,9 +19,25 @@ contract Treasury is AccessControlled, TreasuryStorage, ITreasury, ReentrancyGua
 
     constructor(address accessManager_) AccessControlled(accessManager_) {}
 
+    // =============================================================
+    //                        VIEW FUNCTIONS
+    // =============================================================
+
     function accessManager() external view override returns (address) {
         return address(_accessManager);
     }
+
+    function balanceETH() external view override returns (uint256) {
+        return address(this).balance;
+    }
+
+    function tokenBalance(address token) external view override returns (uint256) {
+        return IERC20(token).balanceOf(address(this));
+    }
+
+    // =============================================================
+    //                         ETH FUNCTIONS
+    // =============================================================
 
     function depositETH() external payable override {
         Validation.validateAmount(msg.value);
@@ -29,14 +45,16 @@ contract Treasury is AccessControlled, TreasuryStorage, ITreasury, ReentrancyGua
         emit ETHDeposited(msg.sender, msg.value);
     }
 
-    function withdrawETH(address payable receiver, uint256 amount)
+    function withdrawETH(
+        address payable receiver,
+        uint256 amount
+    )
         external
         override
         onlyRole(Roles.TREASURY_MANAGER_ROLE)
         nonReentrant
     {
         Validation.validateAddress(receiver);
-
         Validation.validateAmount(amount);
 
         uint256 balance = address(this).balance;
@@ -52,7 +70,10 @@ contract Treasury is AccessControlled, TreasuryStorage, ITreasury, ReentrancyGua
 
     /// @notice Sends ETH to an authorized treasury withdrawal receiver.
     /// @dev Receiver is controlled by TREASURY_MANAGER_ROLE.
-    function _sendETH(address payable receiver, uint256 amount) internal {
+    function _sendETH(
+        address payable receiver,
+        uint256 amount
+    ) internal {
         (bool success,) = receiver.call{value: amount}("");
 
         if (!success) {
@@ -60,28 +81,40 @@ contract Treasury is AccessControlled, TreasuryStorage, ITreasury, ReentrancyGua
         }
     }
 
-    function depositToken(address token, uint256 amount) external override {
-        Validation.validateAddress(token);
+    // =============================================================
+    //                       TOKEN FUNCTIONS
+    // =============================================================
 
+    function depositToken(
+        address token,
+        uint256 amount
+    ) external override {
+        Validation.validateAddress(token);
         Validation.validateAmount(amount);
 
-        IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+        IERC20(token).safeTransferFrom(
+            msg.sender,
+            address(this),
+            amount
+        );
 
         _tokenBalances[token] += amount;
 
         emit TokenDeposited(token, msg.sender, amount);
     }
 
-    function withdrawToken(address token, address receiver, uint256 amount)
+    function withdrawToken(
+        address token,
+        address receiver,
+        uint256 amount
+    )
         external
         override
         onlyRole(Roles.TREASURY_MANAGER_ROLE)
         nonReentrant
     {
         Validation.validateAddress(token);
-
         Validation.validateAddress(receiver);
-
         Validation.validateAmount(amount);
 
         if (_tokenBalances[token] < amount) {
@@ -95,13 +128,9 @@ contract Treasury is AccessControlled, TreasuryStorage, ITreasury, ReentrancyGua
         emit TokenWithdrawn(token, receiver, amount);
     }
 
-    function balanceETH() external view override returns (uint256) {
-        return address(this).balance;
-    }
-
-    function tokenBalance(address token) external view override returns (uint256) {
-        return IERC20(token).balanceOf(address(this));
-    }
+    // =============================================================
+    //                         RECEIVE
+    // =============================================================
 
     receive() external payable {
         Validation.validateAmount(msg.value);
