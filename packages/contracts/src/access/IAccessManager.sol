@@ -2,22 +2,31 @@
 
 pragma solidity ^0.8.30;
 
-/// @title Atlas Protocol Access Manager
-/// @notice Interface responsável pelo gerenciamento de permissões do protocolo.
+/// @title Atlas Protocol Access Manager Interface
+/// @notice Defines the role-management interface used by Atlas Protocol contracts.
 interface IAccessManager {
-    /// @notice Verifica se uma conta possui determinado papel.
-    /// @param role Papel a ser verificado.
-    /// @param account Conta que será verificada.
-    /// @return True se a conta possuir o papel.
-    function hasRole(bytes32 role, address account) external view returns (bool);
+    /// @notice Checks whether an account has a specific role.
+    /// @param role Role identifier.
+    /// @param account Account to check.
+    /// @return True if the account has the role.
+    function hasRole(
+        bytes32 role,
+        address account
+    ) external view returns (bool);
 
-    /// @notice Concede um papel a uma conta.
-    /// @param role Papel que será concedido.
-    /// @param account Conta que receberá o papel.
-    function grantRole(bytes32 role, address account) external;
+    /// @notice Grants a role to an account.
+    /// @param role Role identifier.
+    /// @param account Account that will receive the role.
+    function grantRole(
+        bytes32 role,
+        address account
+    ) external;
 
-    /// @notice Revoga um papel de uma conta.
-    /// @param role Papel que será revogado.
-    /// @param account Conta que perderá o papel.
-    function revokeRole(bytes32 role, address account) external;
+    /// @notice Revokes a role from an account.
+    /// @param role Role identifier.
+    /// @param account Account that will lose the role.
+    function revokeRole(
+        bytes32 role,
+        address account
+    ) external;
 }
