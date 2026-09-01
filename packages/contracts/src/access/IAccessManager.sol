@@ -9,24 +9,15 @@ interface IAccessManager {
     /// @param role Role identifier.
     /// @param account Account to check.
     /// @return True if the account has the role.
-    function hasRole(
-        bytes32 role,
-        address account
-    ) external view returns (bool);
+    function hasRole(bytes32 role, address account) external view returns (bool);
 
     /// @notice Grants a role to an account.
     /// @param role Role identifier.
     /// @param account Account that will receive the role.
-    function grantRole(
-        bytes32 role,
-        address account
-    ) external;
+    function grantRole(bytes32 role, address account) external;
 
     /// @notice Revokes a role from an account.
     /// @param role Role identifier.
     /// @param account Account that will lose the role.
-    function revokeRole(
-        bytes32 role,
-        address account
-    ) external;
+    function revokeRole(bytes32 role, address account) external;
 }
