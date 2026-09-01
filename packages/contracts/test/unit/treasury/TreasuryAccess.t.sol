@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.30;
 
 import {Test} from "forge-std/Test.sol";
 
 import {Treasury} from "../../../src/treasury/Treasury.sol";
 import {MockERC20} from "../../mocks/MockERC20.sol";
-
 import {Roles} from "../../../src/access/Roles.sol";
 import {AccessManager} from "../../../src/access/AccessManager.sol";
 import {CommonErrors} from "../../../src/common/CommonErrors.sol";
@@ -25,9 +25,7 @@ contract TreasuryAccessTest is Test {
         vm.startPrank(admin);
 
         accessManager = new AccessManager(admin);
-
         treasury = new Treasury(address(accessManager));
-
         token = new MockERC20();
 
         accessManager.grantRole(Roles.TREASURY_MANAGER_ROLE, manager);
@@ -37,11 +35,26 @@ contract TreasuryAccessTest is Test {
         vm.deal(address(treasury), 100 ether);
 
         token.mint(address(this), 1000 ether);
-
         token.approve(address(treasury), 1000 ether);
 
         treasury.depositToken(address(token), 1000 ether);
     }
+
+    // =============================================================
+    //                         VIEW FUNCTIONS
+    // =============================================================
+
+    function test_AccessManagerReturnsConfiguredManager() public view {
+        assertEq(treasury.accessManager(), address(accessManager));
+    }
+
+    function test_BalanceETHReturnsTreasuryBalance() public view {
+        assertEq(treasury.balanceETH(), 100 ether);
+    }
+
+    // =============================================================
+    //                         ETH WITHDRAW
+    // =============================================================
 
     function test_ManagerCanWithdrawETH() public {
         uint256 balanceBefore = manager.balance;
@@ -60,6 +73,10 @@ contract TreasuryAccessTest is Test {
 
         treasury.withdrawETH(payable(user), AMOUNT);
     }
+
+    // =============================================================
+    //                       TOKEN WITHDRAW
+    // =============================================================
 
     function test_ManagerCanWithdrawToken() public {
         uint256 beforeBalance = token.balanceOf(manager);
@@ -80,6 +97,10 @@ contract TreasuryAccessTest is Test {
 
         treasury.withdrawToken(address(token), user, 100 ether);
     }
+
+    // =============================================================
+    //                       ROLE MANAGEMENT
+    // =============================================================
 
     function test_AdminCanGrantTreasuryRole() public {
         address newManager = address(10);

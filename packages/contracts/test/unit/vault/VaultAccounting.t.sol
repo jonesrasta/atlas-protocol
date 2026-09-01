@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.30;
 
 import {VaultBase} from "./VaultBase.t.sol";
+
 import {AtlasVault} from "../../../src/vault/AtlasVault.sol";
+import {VaultErrors} from "../../../src/vault/VaultErrors.sol";
 
 contract VaultAccountingTest is VaultBase {
     uint256 internal constant AMOUNT = 100 ether;
@@ -94,10 +97,8 @@ contract VaultAccountingTest is VaultBase {
         uint256 assetsReceived = vault.redeem(userSharesBefore, user, user);
 
         assertEq(assetsReceived, AMOUNT);
-
         assertEq(vault.balanceOf(user), 0);
         assertEq(vault.totalSupply(), 0);
-
         assertEq(asset.balanceOf(user), userAssetsBefore + AMOUNT);
         assertEq(vault.totalAssets(), 0);
     }
@@ -112,10 +113,8 @@ contract VaultAccountingTest is VaultBase {
         uint256 sharesBurned = vault.withdraw(AMOUNT, user, user);
 
         assertEq(sharesBurned, AMOUNT);
-
         assertEq(vault.balanceOf(user), 0);
         assertEq(vault.totalSupply(), 0);
-
         assertEq(asset.balanceOf(user), AMOUNT);
         assertEq(vault.totalAssets(), 0);
     }
@@ -136,10 +135,8 @@ contract VaultAccountingTest is VaultBase {
         vm.stopPrank();
 
         assertEq(shares, AMOUNT);
-
         assertEq(vault.totalAssets(), AMOUNT * 2);
         assertEq(vault.totalSupply(), AMOUNT * 2);
-
         assertEq(vault.balanceOf(user), AMOUNT);
         assertEq(vault.balanceOf(user2), AMOUNT);
     }
@@ -159,13 +156,10 @@ contract VaultAccountingTest is VaultBase {
         uint256 assetsReceived = vault.redeem(AMOUNT, user, user);
 
         assertEq(assetsReceived, AMOUNT);
-
         assertEq(vault.balanceOf(user), 0);
         assertEq(vault.balanceOf(user2), AMOUNT);
-
         assertEq(vault.totalSupply(), AMOUNT);
         assertEq(vault.totalAssets(), AMOUNT);
-
         assertEq(asset.balanceOf(user), AMOUNT);
         assertEq(asset.balanceOf(user2), 0);
     }
@@ -209,16 +203,16 @@ contract VaultAccountingTest is VaultBase {
     function test_donation_reducesSharesReceivedByNextDepositor() public {
         uint256 donation = AMOUNT;
 
-        // Vault começa com:
+        // Initial state:
         // 100 assets / 100 shares.
-        //
-        // Uma doação direta adiciona 100 assets sem criar shares.
+
         mintAsset(address(vault), donation);
 
         assertEq(vault.totalAssets(), AMOUNT * 2);
         assertEq(vault.totalSupply(), AMOUNT);
 
-        // O segundo usuário deposita 100 assets.
+        // Second user deposits 100 assets.
+
         mintAsset(user2, AMOUNT);
 
         vm.startPrank(user2);
@@ -229,10 +223,13 @@ contract VaultAccountingTest is VaultBase {
 
         vm.stopPrank();
 
-        // Exchange rate estava aproximadamente em 2 assets/share,
-        // portanto 100 assets devem gerar aproximadamente 50 shares.
-        assertEq(sharesReceived, 50 ether);
+        // Exchange rate:
+        // 200 assets / 100 shares = 2 assets/share.
+        //
+        // Therefore:
+        // 100 assets -> 50 shares.
 
+        assertEq(sharesReceived, 50 ether);
         assertEq(vault.balanceOf(user2), 50 ether);
         assertEq(vault.totalSupply(), 150 ether);
         assertEq(vault.totalAssets(), 300 ether);
@@ -281,14 +278,15 @@ contract VaultAccountingTest is VaultBase {
         // Donation:
         // +1 asset
         //
-        // New exchange rate:
+        // Exchange rate:
         // 101 assets / 100 shares
 
         mintAsset(address(vault), 1 ether);
 
         uint256 previewedShares = vault.previewDeposit(1);
 
-        // Deposit de 1 wei deve arredondar para baixo.
+        // 1 wei of asset should round down to 0 shares.
+
         assertEq(previewedShares, 0);
 
         mintAsset(user2, 1);
@@ -310,7 +308,8 @@ contract VaultAccountingTest is VaultBase {
 
         uint256 previewedAssets = vault.previewMint(1);
 
-        // Mint de 1 wei de share exige 2 wei de asset.
+        // 1 share requires 2 wei of assets.
+
         assertEq(previewedAssets, 2);
 
         mintAsset(user2, 2);
@@ -368,16 +367,6 @@ contract VaultAccountingTest is VaultBase {
     // =============================================================
 
     function test_inflationAttack_firstDepositorDonation() public {
-        // ---------------------------------------------------------
-        // Create a fresh empty vault.
-        //
-        // The main test fixture already contains:
-        // 100 assets / 100 shares.
-        //
-        // An inflation attack must start with an empty vault,
-        // otherwise the attacker is not the first depositor.
-        // ---------------------------------------------------------
-
         AtlasVault attackVault = new AtlasVault(asset, address(accessManager));
 
         uint256 attackerInitialDeposit = 1;
@@ -391,7 +380,7 @@ contract VaultAccountingTest is VaultBase {
         assertEq(attackVault.totalSupply(), 0);
 
         // ---------------------------------------------------------
-        // 1. Attacker makes the first deposit with 1 wei.
+        // 1. Attacker makes first deposit with 1 wei.
         // ---------------------------------------------------------
 
         mintAsset(attacker, attackerInitialDeposit);
@@ -408,22 +397,25 @@ contract VaultAccountingTest is VaultBase {
         assertEq(attackVault.balanceOf(attacker), 1);
 
         // ---------------------------------------------------------
-        // 2. Attacker donates 100 ETH directly to the vault.
+        // 2. Attacker donates 100 ETH directly to vault.
         // ---------------------------------------------------------
 
         mintAsset(attacker, donation);
 
         vm.prank(attacker);
-        asset.transfer(address(attackVault), donation);
+
+        bool transferSuccess = asset.transfer(address(attackVault), donation);
+
+        assertTrue(transferSuccess);
 
         assertEq(attackVault.totalAssets(), attackerInitialDeposit + donation);
 
-        // Donation must not mint shares.
         assertEq(attackVault.totalSupply(), attackerShares);
+
         assertEq(attackVault.balanceOf(attacker), attackerShares);
 
         // ---------------------------------------------------------
-        // 3. Victim deposits 100 ETH after the donation.
+        // 3. Victim deposits after donation.
         // ---------------------------------------------------------
 
         mintAsset(victim, victimDeposit);
@@ -444,12 +436,11 @@ contract VaultAccountingTest is VaultBase {
 
         assertEq(attackVault.totalSupply(), attackerShares + victimShares);
 
-        // The donation must reduce the victim's shares.
         assertGt(victimShares, 0);
         assertLt(victimShares, victimDeposit);
 
         // ---------------------------------------------------------
-        // 4. Attacker redeems the original 1 share.
+        // 4. Attacker redeems original share.
         // ---------------------------------------------------------
 
         uint256 attackerCapital = attackerInitialDeposit + donation;
@@ -462,27 +453,16 @@ contract VaultAccountingTest is VaultBase {
         // 5. Economic result.
         // ---------------------------------------------------------
 
-        // The attacker cannot recover more assets than the capital
-        // committed to the attack.
         assertLe(attackerRecoveredAssets, attackerCapital);
 
-        // The attacker's final balance must also remain bounded by
-        // the capital committed to the attack.
         assertLe(asset.balanceOf(attacker), attackerCapital);
 
-        // Attacker no longer owns shares.
         assertEq(attackVault.balanceOf(attacker), 0);
 
-        // Victim still owns shares.
         assertEq(attackVault.balanceOf(victim), victimShares);
-        assertGt(victimShares, 0);
     }
 
     function test_inflationAttack_economicImpact() public {
-        // ---------------------------------------------------------
-        // Fresh vault: 0 assets / 0 shares.
-        // ---------------------------------------------------------
-
         AtlasVault attackVault = new AtlasVault(asset, address(accessManager));
 
         uint256 attackerInitialDeposit = 1;
@@ -493,7 +473,7 @@ contract VaultAccountingTest is VaultBase {
         address victim = makeAddr("economicVictim");
 
         // ---------------------------------------------------------
-        // 1. Attacker makes the first deposit with 1 wei.
+        // 1. Attacker makes first deposit with 1 wei.
         // ---------------------------------------------------------
 
         mintAsset(attacker, attackerInitialDeposit);
@@ -509,38 +489,40 @@ contract VaultAccountingTest is VaultBase {
         assertEq(attackerShares, 1);
 
         // ---------------------------------------------------------
-        // 2. Attacker donates assets directly to the vault.
+        // 2. Attacker donates assets directly to vault.
         // ---------------------------------------------------------
 
         mintAsset(attacker, donation);
 
         vm.prank(attacker);
-        asset.transfer(address(attackVault), donation);
+
+        bool transferSuccess = asset.transfer(address(attackVault), donation);
+
+        assertTrue(transferSuccess);
 
         // ---------------------------------------------------------
-        // 3. Victim deposits after the donation.
+        // 3. Victim deposits after donation.
         // ---------------------------------------------------------
 
         mintAsset(victim, victimDeposit);
 
-        uint256 victimShares = attackVault.previewDeposit(victimDeposit);
+        uint256 victimPreviewShares = attackVault.previewDeposit(victimDeposit);
 
         vm.startPrank(victim);
 
         asset.approve(address(attackVault), victimDeposit);
-        attackVault.deposit(victimDeposit, victim);
+
+        uint256 victimShares = attackVault.deposit(victimDeposit, victim);
 
         vm.stopPrank();
 
-        // The victim must receive shares.
-        assertGt(victimShares, 0);
+        assertEq(victimShares, victimPreviewShares);
 
-        // But the donation must significantly reduce the
-        // amount of shares received relative to a 1:1 vault.
+        assertGt(victimShares, 0);
         assertLt(victimShares, victimDeposit);
 
         // ---------------------------------------------------------
-        // 4. Calculate the attacker's economic position.
+        // 4. Calculate attacker's economic position.
         // ---------------------------------------------------------
 
         uint256 attackerCapital = attackerInitialDeposit + donation;
@@ -549,34 +531,213 @@ contract VaultAccountingTest is VaultBase {
 
         uint256 attackerRecoveredAssets = attackVault.redeem(attackerShares, attacker, attacker);
 
-        // Net profit/loss.
-        int256 attackerProfit = int256(attackerRecoveredAssets) - int256(attackerCapital);
+        assertLe(attackerRecoveredAssets, attackerCapital);
 
         // ---------------------------------------------------------
-        // 5. Calculate the victim's effective value.
+        // 5. Calculate victim's effective value.
         // ---------------------------------------------------------
 
         uint256 victimEffectiveValue = attackVault.convertToAssets(victimShares);
 
-        // ---------------------------------------------------------
-        // 6. Economic assertions.
-        // ---------------------------------------------------------
-
-        // The attacker cannot extract more than the capital
-        // committed to the attack.
-        assertLe(attackerRecoveredAssets, attackerCapital);
-
-        // Therefore the attack cannot produce a positive
-        // risk-free profit in this controlled scenario.
-        assertLe(attackerProfit, 0);
-
-        // The victim's shares must retain positive value.
         assertGt(victimEffectiveValue, 0);
 
-        // The attacker no longer owns shares.
+        // ---------------------------------------------------------
+        // 6. Final state.
+        // ---------------------------------------------------------
+
         assertEq(attackVault.balanceOf(attacker), 0);
 
-        // The victim still owns the shares received from the deposit.
         assertEq(attackVault.balanceOf(victim), victimShares);
+    }
+
+    // =============================================================
+    //                         MAX LIMITS
+    // =============================================================
+
+    function test_maxDeposit_whenActive_returnsMaxUint() public view {
+        assertEq(vault.maxDeposit(user), type(uint256).max);
+    }
+
+    function test_maxMint_whenActive_returnsMaxUint() public view {
+        assertEq(vault.maxMint(user), type(uint256).max);
+    }
+
+    function test_maxWithdraw_whenActive_matchesUserAssets() public view {
+        assertEq(vault.maxWithdraw(user), vault.convertToAssets(vault.balanceOf(user)));
+    }
+
+    function test_maxRedeem_whenActive_matchesUserShares() public view {
+        assertEq(vault.maxRedeem(user), vault.balanceOf(user));
+    }
+
+    // =============================================================
+    //                      PAUSED LIMITS
+    // =============================================================
+
+    function test_maxDeposit_whenPaused_returnsZero() public {
+        vm.prank(admin);
+
+        vault.pause();
+
+        assertEq(vault.maxDeposit(user), 0);
+    }
+
+    function test_maxMint_whenPaused_returnsZero() public {
+        vm.prank(admin);
+
+        vault.pause();
+
+        assertEq(vault.maxMint(user), 0);
+    }
+
+    function test_maxWithdraw_whenPaused_returnsZero() public {
+        vm.prank(admin);
+
+        vault.pause();
+
+        assertEq(vault.maxWithdraw(user), 0);
+    }
+
+    function test_maxRedeem_whenPaused_returnsZero() public {
+        vm.prank(admin);
+
+        vault.pause();
+
+        assertEq(vault.maxRedeem(user), 0);
+    }
+
+    // =============================================================
+    //                    PAUSED OPERATIONS
+    // =============================================================
+
+    function test_deposit_revertsWhenPaused() public {
+        vm.prank(admin);
+
+        vault.pause();
+
+        mintAsset(user2, AMOUNT);
+
+        vm.startPrank(user2);
+
+        asset.approve(address(vault), AMOUNT);
+
+        vm.expectRevert(VaultErrors.VaultPaused.selector);
+
+        vault.deposit(AMOUNT, user2);
+
+        vm.stopPrank();
+    }
+
+    function test_mint_revertsWhenPaused() public {
+        vm.prank(admin);
+
+        vault.pause();
+
+        mintAsset(user2, AMOUNT);
+
+        vm.startPrank(user2);
+
+        asset.approve(address(vault), AMOUNT);
+
+        vm.expectRevert(VaultErrors.VaultPaused.selector);
+
+        vault.mint(AMOUNT, user2);
+
+        vm.stopPrank();
+    }
+
+    function test_withdraw_revertsWhenPaused() public {
+        vm.prank(admin);
+
+        vault.pause();
+
+        vm.prank(user);
+
+        vm.expectRevert(VaultErrors.VaultPaused.selector);
+
+        vault.withdraw(AMOUNT, user, user);
+    }
+
+    function test_redeem_revertsWhenPaused() public {
+        vm.prank(admin);
+
+        vault.pause();
+
+        vm.prank(user);
+
+        vm.expectRevert(VaultErrors.VaultPaused.selector);
+
+        vault.redeem(AMOUNT, user, user);
+    }
+
+    // =============================================================
+    //                     PAUSE / UNPAUSE
+    // =============================================================
+
+    function test_unpause_restoresOperations() public {
+        vm.startPrank(admin);
+
+        vault.pause();
+
+        assertTrue(vault.paused());
+
+        vault.unpause();
+
+        assertFalse(vault.paused());
+
+        vm.stopPrank();
+
+        mintAsset(user2, AMOUNT);
+
+        vm.startPrank(user2);
+
+        asset.approve(address(vault), AMOUNT);
+
+        uint256 shares = vault.deposit(AMOUNT, user2);
+
+        vm.stopPrank();
+
+        assertEq(shares, AMOUNT);
+        assertEq(vault.balanceOf(user2), AMOUNT);
+    }
+
+    function test_pause_revertsWhenAlreadyPaused() public {
+        vm.startPrank(admin);
+
+        vault.pause();
+
+        vm.expectRevert(VaultErrors.AlreadyPaused.selector);
+
+        vault.pause();
+
+        vm.stopPrank();
+    }
+
+    function test_unpause_revertsWhenNotPaused() public {
+        vm.prank(admin);
+
+        vm.expectRevert(VaultErrors.NotPaused.selector);
+
+        vault.unpause();
+    }
+
+    // =============================================================
+    //                     AUTHORIZATION
+    // =============================================================
+
+    function test_pause_revertsForUnauthorizedAccount() public {
+        vm.prank(user);
+
+        vm.expectRevert();
+
+        vault.pause();
+    }
+
+    function test_unpause_revertsForUnauthorizedAccount() public {
+        vm.prank(user);
+
+        vm.expectRevert();
+
+        vault.unpause();
     }
 }

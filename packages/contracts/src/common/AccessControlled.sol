@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.30;
 
 import {IAccessManager} from "../access/IAccessManager.sol";
 import {CommonErrors} from "./CommonErrors.sol";
 
+/// @title Atlas Protocol Access Controlled
+/// @notice Base contract for contracts protected by the Atlas AccessManager.
 abstract contract AccessControlled {
     IAccessManager internal immutable _accessManager;
 
@@ -23,6 +26,8 @@ abstract contract AccessControlled {
         _;
     }
 
+    /// @notice Returns the configured access manager.
+    /// @return The address of the Atlas AccessManager.
     function getAccessManager() external view returns (address) {
         return address(_accessManager);
     }

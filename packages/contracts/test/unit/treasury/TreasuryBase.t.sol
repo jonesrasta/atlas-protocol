@@ -1,82 +1,82 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.30;
 
 import {Test} from "forge-std/Test.sol";
 
+import {Treasury} from "../../../src/treasury/Treasury.sol";
+import {MockERC20} from "../../mocks/MockERC20.sol";
 import {AccessManager} from "../../../src/access/AccessManager.sol";
 import {Roles} from "../../../src/access/Roles.sol";
 
-import {Treasury} from "../../../src/treasury/Treasury.sol";
-
-import {MockERC20} from "../../mocks/MockERC20.sol";
-
-/// @title TreasuryBaseTest
-/// @author Atlas Protocol
-/// @notice Contrato base para todos os testes do Treasury.
 abstract contract TreasuryBaseTest is Test {
-    AccessManager internal accessManager;
     Treasury internal treasury;
-    MockERC20 internal mockToken;
+    AccessManager internal accessManager;
+    MockERC20 internal token;
 
-    address internal admin = makeAddr("admin");
-    address internal treasuryManager = makeAddr("treasuryManager");
+    address internal admin;
+    address internal manager;
+    address internal user;
+    address internal attacker;
+    address internal receiver;
 
-    address internal user = makeAddr("user");
-    address internal receiver = makeAddr("receiver");
-    address internal attacker = makeAddr("attacker");
-
-    uint256 internal constant INITIAL_ETH = 100 ether;
-    uint256 internal constant INITIAL_TOKEN = 1_000_000 ether;
+    uint256 internal constant INITIAL_ETH_BALANCE = 100 ether;
 
     function setUp() public virtual {
+        admin = makeAddr("admin");
+        manager = makeAddr("manager");
+        user = makeAddr("user");
+        attacker = makeAddr("attacker");
+        receiver = makeAddr("receiver");
+
         vm.startPrank(admin);
 
         accessManager = new AccessManager(admin);
-
         treasury = new Treasury(address(accessManager));
+        token = new MockERC20();
 
-        mockToken = new MockERC20();
-
-        accessManager.grantRole(Roles.TREASURY_MANAGER_ROLE, treasuryManager);
+        accessManager.grantRole(Roles.TREASURY_MANAGER_ROLE, manager);
 
         vm.stopPrank();
 
-        vm.deal(admin, INITIAL_ETH);
-        vm.deal(user, INITIAL_ETH);
-        vm.deal(attacker, INITIAL_ETH);
-        vm.deal(receiver, INITIAL_ETH);
-
-        mockToken.mint(user, INITIAL_TOKEN);
-        mockToken.mint(admin, INITIAL_TOKEN);
-        mockToken.mint(attacker, INITIAL_TOKEN);
+        vm.deal(admin, INITIAL_ETH_BALANCE);
+        vm.deal(manager, INITIAL_ETH_BALANCE);
+        vm.deal(user, INITIAL_ETH_BALANCE);
+        vm.deal(attacker, INITIAL_ETH_BALANCE);
+        vm.deal(receiver, INITIAL_ETH_BALANCE);
     }
 
-    //Helpers
-    function _depositETH(address depositor, uint256 amount) internal {
-        vm.prank(depositor);
+    // =============================================================
+    //                         HELPERS
+    // =============================================================
+
+    function _depositETH(address account, uint256 amount) internal {
+        vm.prank(account);
 
         treasury.depositETH{value: amount}();
     }
 
-    function _depositToken(address depositor, uint256 amount) internal {
-        vm.startPrank(depositor);
-
-        mockToken.approve(address(treasury), amount);
-
-        treasury.depositToken(address(mockToken), amount);
-
-        vm.stopPrank();
+    function _fundTreasuryETH(uint256 amount) internal {
+        vm.deal(address(treasury), amount);
     }
 
-    function _withdrawETH(address payable to, uint256 amount) internal {
-        vm.prank(treasuryManager);
-
-        treasury.withdrawETH(to, amount);
+    function _mintToken(address account, uint256 amount) internal {
+        token.mint(account, amount);
     }
 
-    function _withdrawToken(address to, uint256 amount) internal {
-        vm.prank(treasuryManager);
+    function _approveToken(address account, uint256 amount) internal {
+        vm.prank(account);
 
-        treasury.withdrawToken(address(mockToken), to, amount);
+        token.approve(address(treasury), amount);
+    }
+
+    function _depositToken(address account, uint256 amount) internal {
+        _mintToken(account, amount);
+        _approveToken(account, amount);
+
+        vm.prank(account);
+
+        treasury.depositToken(address(token), amount);
     }
 }
+

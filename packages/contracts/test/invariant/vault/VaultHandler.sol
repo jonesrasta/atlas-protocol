@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.30;
@@ -63,11 +62,7 @@ contract VaultHandler is Test {
     //                       CONSTRUCTOR
     // =============================================================
 
-    constructor(
-        AtlasVault _vault,
-        AtlasToken _asset,
-        address _admin
-    ) {
+    constructor(AtlasVault _vault, AtlasToken _asset, address _admin) {
         vault = _vault;
         asset = _asset;
         admin = _admin;
@@ -137,11 +132,7 @@ contract VaultHandler is Test {
 
         vm.prank(withdrawer);
 
-        uint256 sharesBurned = vault.withdraw(
-            amount,
-            withdrawer,
-            withdrawer
-        );
+        uint256 sharesBurned = vault.withdraw(amount, withdrawer, withdrawer);
 
         uint256 sharesAfter = vault.balanceOf(withdrawer);
 
@@ -172,11 +163,7 @@ contract VaultHandler is Test {
 
         vm.prank(redeemer);
 
-        uint256 assetsReceived = vault.redeem(
-            shares,
-            redeemer,
-            redeemer
-        );
+        uint256 assetsReceived = vault.redeem(shares, redeemer, redeemer);
 
         uint256 sharesAfter = vault.balanceOf(redeemer);
 
@@ -229,11 +216,7 @@ contract VaultHandler is Test {
     ///
     /// The attack starts only from an empty vault and is executed
     /// once so the economic measurement remains isolated.
-    function inflationAttack(
-        uint256 attackerDeposit,
-        uint256 attackerDonation,
-        uint256 victimDeposit
-    ) external {
+    function inflationAttack(uint256 attackerDeposit, uint256 attackerDonation, uint256 victimDeposit) external {
         if (ghostAttackExecuted) {
             return;
         }
@@ -243,23 +226,11 @@ contract VaultHandler is Test {
             return;
         }
 
-        attackerDeposit = bound(
-            attackerDeposit,
-            1,
-            1 ether
-        );
+        attackerDeposit = bound(attackerDeposit, 1, 1 ether);
 
-        attackerDonation = bound(
-            attackerDonation,
-            1,
-            1_000 ether
-        );
+        attackerDonation = bound(attackerDonation, 1, 1_000 ether);
 
-        victimDeposit = bound(
-            victimDeposit,
-            1,
-            1_000 ether
-        );
+        victimDeposit = bound(victimDeposit, 1, 1_000 ether);
 
         address attacker = actors[0];
         address victim = actors[1];
@@ -274,10 +245,7 @@ contract VaultHandler is Test {
 
         asset.approve(address(vault), attackerDeposit);
 
-        uint256 attackerShares = vault.deposit(
-            attackerDeposit,
-            attacker
-        );
+        uint256 attackerShares = vault.deposit(attackerDeposit, attacker);
 
         vm.stopPrank();
 
@@ -295,23 +263,14 @@ contract VaultHandler is Test {
 
         vm.prank(attacker);
 
-        bool donationSuccess = asset.transfer(
-            address(vault),
-            attackerDonation
-        );
+        bool donationSuccess = asset.transfer(address(vault), attackerDonation);
 
         assertTrue(donationSuccess);
 
-        assertEq(
-            vault.totalAssets(),
-            assetsBeforeDonation + attackerDonation
-        );
+        assertEq(vault.totalAssets(), assetsBeforeDonation + attackerDonation);
 
         // Donation must not mint shares.
-        assertEq(
-            vault.totalSupply(),
-            attackerShares
-        );
+        assertEq(vault.totalSupply(), attackerShares);
 
         // ---------------------------------------------------------
         // 3. Victim deposit
@@ -325,19 +284,13 @@ contract VaultHandler is Test {
 
         asset.approve(address(vault), victimDeposit);
 
-        uint256 victimShares = vault.deposit(
-            victimDeposit,
-            victim
-        );
+        uint256 victimShares = vault.deposit(victimDeposit, victim);
 
         vm.stopPrank();
 
         uint256 victimSharesAfter = vault.balanceOf(victim);
 
-        assertEq(
-            victimSharesAfter - victimSharesBefore,
-            victimShares
-        );
+        assertEq(victimSharesAfter - victimSharesBefore, victimShares);
 
         // ---------------------------------------------------------
         // 4. Attacker redeems all shares
@@ -347,18 +300,11 @@ contract VaultHandler is Test {
 
         vm.prank(attacker);
 
-        uint256 attackerRecovered = vault.redeem(
-            attackerShares,
-            attacker,
-            attacker
-        );
+        uint256 attackerRecovered = vault.redeem(attackerShares, attacker, attacker);
 
         uint256 attackerAssetsAfter = asset.balanceOf(attacker);
 
-        assertEq(
-            attackerAssetsAfter - attackerAssetsBefore,
-            attackerRecovered
-        );
+        assertEq(attackerAssetsAfter - attackerAssetsBefore, attackerRecovered);
 
         // Attacker must have no shares left.
         assertEq(vault.balanceOf(attacker), 0);

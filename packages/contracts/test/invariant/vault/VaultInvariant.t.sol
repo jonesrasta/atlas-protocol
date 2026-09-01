@@ -30,30 +30,17 @@ contract VaultInvariantTest is Test {
 
         asset = new AtlasToken(address(accessManager));
 
-        vault = new AtlasVault(
-            asset,
-            address(accessManager)
-        );
+        vault = new AtlasVault(asset, address(accessManager));
 
         vm.startPrank(admin);
 
-        accessManager.grantRole(
-            keccak256("PROTOCOL_ADMIN_ROLE"),
-            admin
-        );
+        accessManager.grantRole(keccak256("PROTOCOL_ADMIN_ROLE"), admin);
 
-        accessManager.grantRole(
-            keccak256("MINTER_ROLE"),
-            admin
-        );
+        accessManager.grantRole(keccak256("MINTER_ROLE"), admin);
 
         vm.stopPrank();
 
-        handler = new VaultHandler(
-            vault,
-            asset,
-            admin
-        );
+        handler = new VaultHandler(vault, asset, admin);
 
         targetContract(address(handler));
     }
@@ -64,22 +51,13 @@ contract VaultInvariantTest is Test {
 
     /// @notice Vault accounting must always match the actual ERC20
     ///         balance held by the vault.
-    function invariant_vaultAssetsMatchTokenBalance()
-        public
-        view
-    {
-        assertEq(
-            vault.totalAssets(),
-            asset.balanceOf(address(vault))
-        );
+    function invariant_vaultAssetsMatchTokenBalance() public view {
+        assertEq(vault.totalAssets(), asset.balanceOf(address(vault)));
     }
 
     /// @notice The value represented by all shares cannot exceed
     ///         the assets held by the vault.
-    function invariant_totalShareValueCannotExceedAssets()
-        public
-        view
-    {
+    function invariant_totalShareValueCannotExceedAssets() public view {
         uint256 totalAssets = vault.totalAssets();
         uint256 totalShares = vault.totalSupply();
 
@@ -87,21 +65,14 @@ contract VaultInvariantTest is Test {
             return;
         }
 
-        uint256 shareValue =
-            vault.convertToAssets(totalShares);
+        uint256 shareValue = vault.convertToAssets(totalShares);
 
-        assertLe(
-            shareValue,
-            totalAssets
-        );
+        assertLe(shareValue, totalAssets);
     }
 
     /// @notice Converting the complete vault asset balance to shares
     ///         cannot produce more shares than currently exist.
-    function invariant_convertToSharesCannotExceedSupply()
-        public
-        view
-    {
+    function invariant_convertToSharesCannotExceedSupply() public view {
         uint256 totalAssets = vault.totalAssets();
         uint256 totalShares = vault.totalSupply();
 
@@ -109,13 +80,9 @@ contract VaultInvariantTest is Test {
             return;
         }
 
-        uint256 convertedShares =
-            vault.convertToShares(totalAssets);
+        uint256 convertedShares = vault.convertToShares(totalAssets);
 
-        assertLe(
-            convertedShares,
-            totalShares
-        );
+        assertLe(convertedShares, totalShares);
     }
 
     // =============================================================
@@ -123,59 +90,33 @@ contract VaultInvariantTest is Test {
     // =============================================================
 
     /// @notice If total supply is zero, no tracked actor can own shares.
-    function invariant_zeroSupplyMeansZeroShares()
-        public
-        view
-    {
+    function invariant_zeroSupplyMeansZeroShares() public view {
         if (vault.totalSupply() != 0) {
             return;
         }
 
-        assertEq(
-            vault.balanceOf(handler.actor(0)),
-            0
-        );
+        assertEq(vault.balanceOf(handler.actor(0)), 0);
 
-        assertEq(
-            vault.balanceOf(handler.actor(1)),
-            0
-        );
+        assertEq(vault.balanceOf(handler.actor(1)), 0);
 
-        assertEq(
-            vault.balanceOf(handler.actor(2)),
-            0
-        );
+        assertEq(vault.balanceOf(handler.actor(2)), 0);
     }
 
     /// @notice When shares exist, one share must have non-zero value.
-    function invariant_exchangeRateIsPositiveWhenSharesExist()
-        public
-        view
-    {
+    function invariant_exchangeRateIsPositiveWhenSharesExist() public view {
         if (vault.totalSupply() == 0) {
             return;
         }
 
-        assertGt(
-            vault.convertToAssets(1),
-            0
-        );
+        assertGt(vault.convertToAssets(1), 0);
     }
 
     /// @notice All shares held by tracked actors must equal total supply.
-    function invariant_totalUserSharesEqualSupply()
-        public
-        view
-    {
+    function invariant_totalUserSharesEqualSupply() public view {
         uint256 userShares =
-            vault.balanceOf(handler.actor(0)) +
-            vault.balanceOf(handler.actor(1)) +
-            vault.balanceOf(handler.actor(2));
+            vault.balanceOf(handler.actor(0)) + vault.balanceOf(handler.actor(1)) + vault.balanceOf(handler.actor(2));
 
-        assertEq(
-            userShares,
-            vault.totalSupply()
-        );
+        assertEq(userShares, vault.totalSupply());
     }
 
     // =============================================================
@@ -184,42 +125,23 @@ contract VaultInvariantTest is Test {
 
     /// @notice Every asset entering or leaving the vault through the
     ///         handler must be reflected in vault.totalAssets().
-    function invariant_assetConservation()
-        public
-        view
-    {
-        uint256 normalInflow =
-            handler.ghostDeposited() +
-            handler.ghostDonated();
+    function invariant_assetConservation() public view {
+        uint256 normalInflow = handler.ghostDeposited() + handler.ghostDonated();
 
-        uint256 normalOutflow =
-            handler.ghostWithdrawn();
+        uint256 normalOutflow = handler.ghostWithdrawn();
 
         uint256 attackInflow =
-            handler.ghostAttackerCapital() +
-            handler.ghostAttackerDonation() +
-            handler.ghostVictimDeposited();
+            handler.ghostAttackerCapital() + handler.ghostAttackerDonation() + handler.ghostVictimDeposited();
 
-        uint256 attackOutflow =
-            handler.ghostAttackerRecovered();
+        uint256 attackOutflow = handler.ghostAttackerRecovered();
 
-        uint256 totalInflow =
-            normalInflow +
-            attackInflow;
+        uint256 totalInflow = normalInflow + attackInflow;
 
-        uint256 totalOutflow =
-            normalOutflow +
-            attackOutflow;
+        uint256 totalOutflow = normalOutflow + attackOutflow;
 
-        assertGe(
-            totalInflow,
-            totalOutflow
-        );
+        assertGe(totalInflow, totalOutflow);
 
-        assertEq(
-            vault.totalAssets(),
-            totalInflow - totalOutflow
-        );
+        assertEq(vault.totalAssets(), totalInflow - totalOutflow);
     }
 
     // =============================================================
@@ -234,21 +156,13 @@ contract VaultInvariantTest is Test {
     ///     initial deposit + donation
     ///
     /// The victim deposit is not attacker capital.
-    function invariant_inflationAttackAttackerCannotProfitFromNothing()
-        public
-        view
-    {
+    function invariant_inflationAttackAttackerCannotProfitFromNothing() public view {
         if (!handler.ghostAttackExecuted()) {
             return;
         }
 
-        uint256 attackerCapital =
-            handler.ghostAttackerCapital() +
-            handler.ghostAttackerDonation();
+        uint256 attackerCapital = handler.ghostAttackerCapital() + handler.ghostAttackerDonation();
 
-        assertLe(
-            handler.ghostAttackerRecovered(),
-            attackerCapital
-        );
+        assertLe(handler.ghostAttackerRecovered(), attackerCapital);
     }
 }
