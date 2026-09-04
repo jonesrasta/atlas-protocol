@@ -7,9 +7,18 @@ import {CommonErrors} from "./CommonErrors.sol";
 
 /// @title Atlas Protocol Access Controlled
 /// @notice Base contract for contracts protected by the Atlas AccessManager.
+/// @dev Stores the AccessManager as an immutable dependency.
 abstract contract AccessControlled {
+    // -------------------------------------------------------------------------
+    // State
+    // -------------------------------------------------------------------------
+
     /// @notice Atlas Protocol access manager.
     IAccessManager internal immutable _accessManager;
+
+    // -------------------------------------------------------------------------
+    // Constructor
+    // -------------------------------------------------------------------------
 
     /// @notice Initializes the access-controlled contract.
     /// @param accessManager_ Address of the Atlas AccessManager.
@@ -21,6 +30,10 @@ abstract contract AccessControlled {
         _accessManager = IAccessManager(accessManager_);
     }
 
+    // -------------------------------------------------------------------------
+    // Modifiers
+    // -------------------------------------------------------------------------
+
     /// @notice Restricts access to accounts holding a specific role.
     /// @param role Role required to execute the function.
     modifier onlyRole(bytes32 role) {
@@ -30,6 +43,10 @@ abstract contract AccessControlled {
 
         _;
     }
+
+    // -------------------------------------------------------------------------
+    // Views
+    // -------------------------------------------------------------------------
 
     /// @notice Returns the configured access manager.
     /// @return The address of the Atlas AccessManager.

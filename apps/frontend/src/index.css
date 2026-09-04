@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+/* Importação forçada dos arquivos locais da Borscha */
+@font-face {
+  font-family: 'Borscha';
+  src: url('/font/Borscha-Black.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Borscha';
+  src: url('/font/Borscha-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Borscha';
+  src: url('/font/Borscha-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  /* Colors */
+  --color-forest-ink: #163300;
+  --color-lime-voltage: #9fe870;
+  --color-spruce: #054d28;
+  --color-linen-mist: #e2f6d5;
+  --color-signal-blue: #0b4c72;
+  --color-alarm-red: #cb272f;
+  --color-charcoal: #454745;
+  --color-obsidian: #0e0f0c;
+  --color-pebble: #868685;
+  --color-slate: #6a6c6a;
+  --color-fog: #e8ebe6;
+  --color-paper: #ffffff;
+
+  /* Typography - Sobrescreve TUDO para a Borscha */
+  --font-borscha: 'Borscha', sans-serif;
+
+  /* Border Radius */
+  --radius-cards: 10px;
+  --radius-inputs: 10px;
+  --radius-largecards: 28px;
+}
+
+/* Força bruta em todos os elementos da página */
+* {
+  font-family: 'Borscha', sans-serif !important;
+}
+
+body {
+  background-color: var(--color-paper);
+  color: var(--color-charcoal);
+  font-family: 'Borscha', sans-serif !important;
+  overflow-x: hidden;
+}
